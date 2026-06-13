@@ -220,6 +220,190 @@ const sidePool = {
 
 const genreLabels = { japanese: "和風", western: "洋風", chinese: "中華", other: "アレンジ" };
 
+const dishKeywordProfiles = [
+  { words: ["鶏", "チキン", "ささみ", "唐揚げ"], type: "meat", ingredient: "鶏肉", calories: 650, cost: 420, bento: true },
+  { words: ["豚", "ポーク", "とんかつ", "しょうが焼き"], type: "meat", ingredient: "豚肉", calories: 720, cost: 470, bento: true },
+  { words: ["牛", "ビーフ", "ステーキ", "牛丼"], type: "meat", ingredient: "牛肉", calories: 760, cost: 620, bento: true },
+  { words: ["ひき肉", "ミンチ", "ハンバーグ", "つくね", "餃子"], type: "meat", ingredient: "ひき肉", calories: 700, cost: 460, bento: true },
+  { words: ["鮭", "サーモン"], type: "fish", ingredient: "鮭", calories: 610, cost: 560, bento: true },
+  { words: ["さば", "鯖"], type: "fish", ingredient: "さば", calories: 650, cost: 480, bento: true },
+  { words: ["ぶり", "鰤"], type: "fish", ingredient: "ぶり", calories: 680, cost: 620, bento: true },
+  { words: ["たら", "白身魚", "魚"], type: "fish", ingredient: "魚", calories: 560, cost: 520, bento: false },
+  { words: ["豆腐", "厚揚げ", "油揚げ"], type: "other", ingredient: "豆腐", calories: 520, cost: 330, bento: false },
+  { words: ["卵", "オムレツ", "オムライス", "親子丼"], type: "other", ingredient: "卵", calories: 620, cost: 330, bento: true },
+  { words: ["カレー"], type: "other", ingredient: "カレールウ", calories: 760, cost: 440, bento: false },
+  { words: ["パスタ", "スパゲッティ"], type: "other", ingredient: "パスタ", calories: 720, cost: 390, bento: false },
+  { words: ["うどん", "そば", "ラーメン", "麺"], type: "other", ingredient: "麺", calories: 650, cost: 360, bento: false },
+];
+
+const dishVegetableKeywords = [
+  ["キャベツ", "キャベツ"],
+  ["白菜", "白菜"],
+  ["なす", "なす"],
+  ["茄子", "なす"],
+  ["ピーマン", "ピーマン"],
+  ["トマト", "トマト"],
+  ["ほうれん草", "ほうれん草"],
+  ["小松菜", "小松菜"],
+  ["じゃがいも", "じゃがいも"],
+  ["じゃが芋", "じゃがいも"],
+  ["大根", "大根"],
+  ["きのこ", "きのこ"],
+  ["しめじ", "しめじ"],
+  ["もやし", "もやし"],
+  ["玉ねぎ", "玉ねぎ"],
+  ["玉葱", "玉ねぎ"],
+  ["にんじん", "にんじん"],
+];
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell);
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+  if (cell || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function csvRowsToObjects(text) {
+  const rows = parseCsv(text);
+  const headers = rows.shift() || [];
+  return rows.map((row) =>
+    Object.fromEntries(headers.map((header, index) => [header.trim(), (row[index] || "").trim()]))
+  );
+}
+
+function inferGenreFromTitle(title) {
+  if (/中華|麻婆|餃子|チャーハン|炒飯|チンジャオ|回鍋|春巻|焼売|担々|酢豚/.test(title)) return "chinese";
+  if (/パスタ|グラタン|シチュー|ピザ|オム|ハンバーグ|ステーキ|サラダ|ポトフ|ムニエル|ドリア/.test(title)) return "western";
+  if (/カレー|ビビンバ|ナムル|タコス|ガパオ|キムチ|韓国|エスニック/.test(title)) return "other";
+  return "japanese";
+}
+
+function inferEffortFromTitle(title) {
+  if (/煮込み|ロースト|オーブン|手作り|コロッケ|春巻|揚げ|フライ|カツ/.test(title)) return "careful";
+  if (/煮|蒸し|焼き|グラタン|シチュー|鍋/.test(title)) return "normal";
+  return "quick";
+}
+
+function inferProfileFromTitle(title) {
+  return dishKeywordProfiles.find((profile) => profile.words.some((word) => title.includes(word))) || {
+    type: "other",
+    ingredient: "主食材",
+    calories: 600,
+    cost: 380,
+    bento: !/汁|スープ|鍋|麺|ラーメン|うどん|そば/.test(title),
+  };
+}
+
+function ingredientsFromDishTitle(title, profile) {
+  const ingredients = {
+    meat: {},
+    fish: {},
+    vegetable: {},
+    other: { 米: /丼|定食|焼肉|照り焼き|生姜焼き|麻婆|カレー/.test(title) ? 85 : 45 },
+    seasoning: {},
+  };
+  ingredients[profile.type][profile.ingredient] = profile.type === "other" ? 1 : 150;
+  dishVegetableKeywords.forEach(([keyword, ingredient]) => {
+    if (title.includes(keyword)) ingredients.vegetable[ingredient] = 90;
+  });
+  if (!Object.keys(ingredients.vegetable).length) {
+    ingredients.vegetable = { 玉ねぎ: 50, にんじん: 35, キャベツ: 60 };
+  }
+  if (/照り焼き|生姜焼き|和風|煮物|煮付け/.test(title)) ingredients.seasoning = { 醤油: 12, みりん: 10 };
+  else if (/カレー/.test(title)) ingredients.seasoning = { カレールウ: 22 };
+  else if (/中華|麻婆|餃子|チャーハン/.test(title)) ingredients.seasoning = { 醤油: 10, ごま油: 5 };
+  else if (/トマト|パスタ|洋風/.test(title)) ingredients.seasoning = { コンソメ: 3, オリーブオイル: 5 };
+  else ingredients.seasoning = { 塩: 1, 醤油: 6 };
+  Object.keys(ingredients).forEach((key) => {
+    if (!Object.keys(ingredients[key]).length) delete ingredients[key];
+  });
+  return ingredients;
+}
+
+function sidesForGenre(genre, index) {
+  const sides = sidePool[genre] || sidePool.japanese;
+  return sides[index % sides.length];
+}
+
+function buildCsvMeal(row, index) {
+  const title = row.dish_name || row.normalized_name;
+  const normalized = row.normalized_name || title;
+  const profile = inferProfileFromTitle(title);
+  const genre = inferGenreFromTitle(title);
+  const effort = inferEffortFromTitle(title);
+  const bento = profile.bento && !/汁|スープ|鍋|麺|ラーメン|うどん|そば|シチュー/.test(title);
+  return {
+    title,
+    normalizedName: normalized,
+    genre,
+    effort,
+    bento,
+    calories: profile.calories + (effort === "careful" ? 80 : 0),
+    cost: profile.cost + (row.recipe_count ? Math.min(Number(row.recipe_count) || 0, 120) : 0),
+    sides: sidesForGenre(genre, index),
+    ingredients: ingredientsFromDishTitle(title, profile),
+    sourceSite: row.source_site,
+    sourceUrl: row.source_url,
+    sourceType: row.source_type,
+    generated: false,
+    fromCsv: true,
+    steps: [
+      `${title}で検索できる定番レシピを確認する。`,
+      "主食材と野菜を食べやすく切り、料理名に合う調理法で火を通す。",
+      "味見して調味料を調整し、副菜と一緒に盛り付ける。",
+    ],
+  };
+}
+
+async function loadCsvMeals() {
+  try {
+    const response = await fetch("./recipe_dish_names_2000.csv", { cache: "no-store" });
+    if (!response.ok) throw new Error("CSVを読み込めませんでした");
+    const text = await response.text();
+    const rows = csvRowsToObjects(text);
+    const seen = new Set();
+    csvMeals = rows
+      .map(buildCsvMeal)
+      .filter((meal) => meal.title && !/^その他/.test(meal.title))
+      .filter((meal) => {
+        if (seen.has(meal.normalizedName)) return false;
+        seen.add(meal.normalizedName);
+        return true;
+      });
+    if (csvMeals.length) {
+      allMeals = csvMeals;
+    }
+  } catch (error) {
+    allMeals = [...mealLibrary, ...generatedMeals];
+  }
+}
+
 function buildGeneratedMeals() {
   const meals = [];
   ingredientProfiles.forEach((protein, proteinIndex) => {
@@ -263,7 +447,8 @@ function buildGeneratedMeals() {
 }
 
 const generatedMeals = buildGeneratedMeals();
-const allMeals = [...mealLibrary, ...generatedMeals];
+let csvMeals = [];
+let allMeals = [...mealLibrary, ...generatedMeals];
 
 const state = {
   days: [],
@@ -524,7 +709,7 @@ function mealOptionsHtml(selectedTitle = "", emptyLabel = "選択なし") {
 }
 
 function recipeSearchUrl(meal) {
-  const keywords = [meal.title, ...Object.keys(flattenIngredients(meal.ingredients)).slice(0, 4), "レシピ"].join(" ");
+  const keywords = `${meal.title} レシピ`;
   return `https://www.google.com/search?q=${encodeURIComponent(keywords)}`;
 }
 
@@ -560,7 +745,7 @@ function renderMealPlan() {
             ${mealOptionsHtml(meal.title)}
           </select>
           <button class="small-button swap-meal-button" type="button">別案</button>
-          <a class="small-button search-link" href="${recipeSearchUrl(meal)}" target="_blank" rel="noopener">検索</a>
+          <a class="small-button search-link" href="${recipeSearchUrl(meal)}" target="_blank" rel="noopener">レシピ検索</a>
         </div>
       </div>
     `;
@@ -916,6 +1101,11 @@ elements.authForm.addEventListener("submit", handleAuthSubmit);
   });
 });
 
-initializeAuth();
-loadState();
-registerServiceWorker();
+async function boot() {
+  initializeAuth();
+  await loadCsvMeals();
+  loadState();
+  registerServiceWorker();
+}
+
+boot();
