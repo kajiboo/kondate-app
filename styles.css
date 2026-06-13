@@ -315,7 +315,7 @@ button:focus-visible {
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
@@ -470,11 +470,6 @@ button:focus-visible {
   text-decoration: none;
 }
 
-.shopping-tools {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .shopping-list {
   display: grid;
   gap: 12px;
@@ -540,6 +535,26 @@ button:focus-visible {
   font-size: 0.9rem;
 }
 
+.recipe-search-list {
+  display: grid;
+  gap: 10px;
+}
+
+.recipe-search-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f2eadc;
+}
+
+.recipe-search-row strong {
+  display: block;
+  line-height: 1.4;
+}
+
 @media (max-width: 860px) {
   .planner-grid {
     grid-template-columns: 1fr;
@@ -580,5 +595,9 @@ button:focus-visible {
 
   .meal-art {
     min-height: 92px;
+  }
+
+  .recipe-search-row {
+    grid-template-columns: 1fr;
   }
 }

@@ -97,6 +97,23 @@ function inferEffortFromTitle(title) {
   return "quick";
 }
 
+function dishRoleFromTitle(title) {
+  if (/ケーキ|プリン|ゼリー|アイス|クッキー|マフィン|パンケーキ|スイーツ|デザート|ヨーグルト|フルーツ|ジャム|タルト|ドーナツ|チョコ|ムース|シャーベット/.test(title)) {
+    return "dessert";
+  }
+  if (/スープカレー/.test(title)) {
+    return "main";
+  }
+  if (/サラダ|和え|ナムル|漬け|漬物|おひたし|きんぴら|酢の物|冷奴|冷ややっこ|煮浸し|マリネ|ピクルス|副菜|付け合わせ|スープ|味噌汁|みそ汁|汁|お吸い物/.test(title)) {
+    return "side";
+  }
+  return "main";
+}
+
+function isBentoFriendlyTitle(title) {
+  return !/汁|スープ|味噌汁|みそ汁|鍋|麺|ラーメン|うどん|そば|シチュー|カレー|パスタ|アイス|ゼリー|プリン|ヨーグルト|サラダ/.test(title);
+}
+
 function inferProfileFromTitle(title) {
   return dishKeywordProfiles.find((profile) => profile.words.some((word) => title.includes(word))) || {
     type: "other",
@@ -144,13 +161,15 @@ function buildCsvMeal(row, index) {
   const profile = inferProfileFromTitle(title);
   const genre = inferGenreFromTitle(title);
   const effort = inferEffortFromTitle(title);
-  const bento = profile.bento && !/汁|スープ|鍋|麺|ラーメン|うどん|そば|シチュー/.test(title);
+  const role = dishRoleFromTitle(title);
+  const bento = role !== "dessert" && profile.bento && isBentoFriendlyTitle(title);
   return {
     title,
     normalizedName: normalized,
     genre,
     effort,
     bento,
+    role,
     calories: profile.calories + (effort === "careful" ? 80 : 0),
     cost: profile.cost + (row.recipe_count ? Math.min(Number(row.recipe_count) || 0, 120) : 0),
     sides: sidesForGenre(genre, index),
@@ -226,13 +245,11 @@ const elements = {
   lockButton: document.querySelector("#lockButton"),
   daySettings: document.querySelector("#daySettings"),
   mealPlan: document.querySelector("#mealPlan"),
-  shoppingList: document.querySelector("#shoppingList"),
   recipeList: document.querySelector("#recipeList"),
   logList: document.querySelector("#logList"),
   totalDays: document.querySelector("#totalDays"),
   totalCalories: document.querySelector("#totalCalories"),
   totalCost: document.querySelector("#totalCost"),
-  copyShoppingButton: document.querySelector("#copyShoppingButton"),
   authGate: document.querySelector("#authGate"),
   authForm: document.querySelector("#authForm"),
   authTitle: document.querySelector("#authTitle"),
@@ -328,20 +345,23 @@ function chooseMeal(day, index, plannedMeals = []) {
   if (!allMeals.length) return null;
   const blockedWords = allBlockedIngredients();
   const preferredMeal = allMeals.find((meal) => meal.title === day.preferredTitle);
-  if (preferredMeal && !mealContainsBlockedIngredient(preferredMeal, blockedWords)) {
+  if (preferredMeal && preferredMeal.role === "main" && (!day.bento || preferredMeal.bento) && !mealContainsBlockedIngredient(preferredMeal, blockedWords)) {
     return preferredMeal;
   }
 
   const strictCandidates = allMeals.filter((meal) => {
+    const matchesRole = meal.role === "main";
     const matchesGenre = day.genre === "any" || meal.genre === day.genre;
     const matchesEffort = meal.effort === day.effort || elements.proteinRule.value === "moreQuick";
     const matchesBento = !day.bento || meal.bento;
-    return matchesGenre && matchesEffort && matchesBento && !mealContainsBlockedIngredient(meal, blockedWords);
+    return matchesRole && matchesGenre && matchesEffort && matchesBento && !mealContainsBlockedIngredient(meal, blockedWords);
   });
 
   const looseCandidates = allMeals.filter((meal) => {
+    const matchesRole = meal.role === "main";
     const matchesGenre = day.genre === "any" || meal.genre === day.genre;
-    return matchesGenre && !mealContainsBlockedIngredient(meal, blockedWords);
+    const matchesBento = !day.bento || meal.bento;
+    return matchesRole && matchesGenre && matchesBento && !mealContainsBlockedIngredient(meal, blockedWords);
   });
 
   let candidates = strictCandidates.length ? strictCandidates : looseCandidates.length ? looseCandidates : allMeals;
@@ -351,6 +371,30 @@ function chooseMeal(day, index, plannedMeals = []) {
   const pool = freshCandidates.length ? freshCandidates : candidates;
   const seed = stringHash(`${day.key}-${day.genre}-${day.effort}-${elements.proteinRule.value}-${state.generationSeed}-${index}`);
   return pool[seed % pool.length] || null;
+}
+
+function chooseSupportMeals(day, mainMeal, index, plannedMeals = []) {
+  const blockedWords = allBlockedIngredients();
+  const usedTitles = new Set([
+    mainMeal.title,
+    ...plannedMeals.flatMap((entry) => entryItems(entry).map((meal) => meal.title)),
+  ]);
+  const sideCandidates = allMeals.filter((meal) => {
+    const matchesRole = meal.role === "side";
+    const matchesBento = !day.bento || meal.bento;
+    return matchesRole && matchesBento && !usedTitles.has(meal.title) && !mealContainsBlockedIngredient(meal, blockedWords);
+  });
+  const dessertCandidates = allMeals.filter((meal) => {
+    return meal.role === "dessert" && !day.bento && !usedTitles.has(meal.title) && !mealContainsBlockedIngredient(meal, blockedWords);
+  });
+  const sideSeed = stringHash(`${day.key}-side-${mainMeal.title}-${state.generationSeed}-${index}`);
+  const dessertSeed = stringHash(`${day.key}-dessert-${mainMeal.title}-${state.generationSeed}-${index}`);
+  const side = sideCandidates.length ? sideCandidates[sideSeed % sideCandidates.length] : null;
+  const dessert = dessertCandidates.length && dessertSeed % 3 === 0 ? dessertCandidates[dessertSeed % dessertCandidates.length] : null;
+  return {
+    sides: side ? [side] : [],
+    dessert,
+  };
 }
 
 function rankCandidatesByRule(candidates) {
@@ -381,7 +425,8 @@ function generatePlan() {
   state.days.forEach((day, index) => {
     const meal = chooseMeal(day, index, nextPlan);
     if (meal) {
-      nextPlan.push({ day, meal });
+      const support = chooseSupportMeals(day, meal, index, nextPlan);
+      nextPlan.push({ day, meal, sides: support.sides, dessert: support.dessert });
     }
   });
   state.plan = nextPlan;
@@ -437,6 +482,7 @@ function renderDaySettings() {
     });
     fragment.querySelector(".day-bento").addEventListener("change", (event) => {
       day.bento = event.target.checked;
+      refreshPlanForDay(day.key);
       saveState();
     });
     preferredSelect.addEventListener("change", (event) => {
@@ -452,7 +498,7 @@ function mealOptionsHtml(selectedTitle = "", emptyLabel = "選択なし") {
     return `<option value="">料理名データを読み込めません</option>`;
   }
   const options = [`<option value="">${emptyLabel}</option>`];
-  allMeals.forEach((meal) => {
+  allMeals.filter((meal) => meal.role === "main").forEach((meal) => {
     const selected = meal.title === selectedTitle ? " selected" : "";
     options.push(`<option value="${meal.title}"${selected}>${meal.title}</option>`);
   });
@@ -464,6 +510,16 @@ function recipeSearchUrl(meal) {
   return `https://www.google.com/search?q=${encodeURIComponent(keywords)}`;
 }
 
+function entryItems(entry) {
+  return [entry.meal, ...(entry.sides || []), entry.dessert].filter(Boolean);
+}
+
+function supportText(entry) {
+  const sideText = entry.sides?.length ? entry.sides.map((meal) => meal.title).join(" / ") : "副菜なし";
+  const dessertText = entry.dessert ? ` / デザート: ${entry.dessert.title}` : "";
+  return `副菜: ${sideText}${dessertText}`;
+}
+
 function renderMealPlan() {
   elements.mealPlan.innerHTML = "";
   if (!state.plan.length) {
@@ -472,8 +528,10 @@ function renderMealPlan() {
   }
 
   const factor = portionFactor();
-  state.plan.forEach(({ day, meal }) => {
+  state.plan.forEach((entry) => {
+    const { day, meal } = entry;
     const date = new Date(day.key);
+    const bentoLabel = day.bento ? "弁当考慮" : "通常";
     const article = document.createElement("article");
     article.className = "meal-card";
     article.innerHTML = `
@@ -482,15 +540,15 @@ function renderMealPlan() {
         <p class="meal-meta">${dateFormatter.format(date)} ${weekdayFormatter.format(date)}曜日</p>
         <div class="meal-title-row">
           <h3>${meal.title}</h3>
-          <span class="badge">${meal.bento ? "弁当向き" : "当日向き"}</span>
+          <span class="badge">${bentoLabel}</span>
         </div>
         <div class="meal-stats">
-          <span>${formatCalories(meal.calories * factor)}</span>
-          <span>${formatMoney(meal.cost * factor)}</span>
+          <span>${formatCalories(entryItems(entry).reduce((sum, item) => sum + item.calories, 0) * factor)}</span>
+          <span>${formatMoney(entryItems(entry).reduce((sum, item) => sum + item.cost, 0) * factor)}</span>
           <span>${effortLabel(meal.effort)}</span>
         </div>
-        <p class="sides">副菜: ${meal.sides.join(" / ")}</p>
-        <p class="bento-note">${meal.bento ? "翌日は主菜を取り分けて弁当に回せます。" : "汁気が多いため弁当は別おかず推奨です。"}</p>
+        <p class="sides">${supportText(entry)}</p>
+        <p class="bento-note">${day.bento ? "汁物・麺・デザート寄りを避けて、弁当に入れやすい候補を優先しています。" : "晩ごはん向けに副菜やデザートも組み合わせます。"}</p>
         <div class="meal-actions">
           <select class="meal-select" aria-label="${dateFormatter.format(date)}の献立を変更">
             ${mealOptionsHtml(meal.title)}
@@ -516,9 +574,26 @@ function changeMealForDay(dayKey, title) {
   const day = state.days.find((item) => item.key === dayKey);
   if (!meal || !entry || !day) return;
   entry.meal = meal;
+  const index = state.plan.findIndex((item) => item.day.key === dayKey);
+  const support = chooseSupportMeals(day, meal, index, state.plan.slice(0, index));
+  entry.sides = support.sides;
+  entry.dessert = support.dessert;
   day.preferredTitle = meal.title;
   render();
   saveState();
+}
+
+function refreshPlanForDay(dayKey) {
+  const index = state.plan.findIndex((item) => item.day.key === dayKey);
+  if (index < 0) return;
+  const day = state.days.find((item) => item.key === dayKey);
+  if (!day) return;
+  const plannedBefore = state.plan.slice(0, index);
+  const meal = chooseMeal({ ...day, preferredTitle: "" }, index, plannedBefore);
+  if (!meal) return;
+  const support = chooseSupportMeals(day, meal, index, plannedBefore);
+  state.plan[index] = { day, meal, sides: support.sides, dessert: support.dessert };
+  render();
 }
 
 function swapMealForDay(dayKey) {
@@ -532,48 +607,15 @@ function swapMealForDay(dayKey) {
   state.plan[index].meal = meal;
   state.days[index].preferredTitle = meal.title;
   state.plan[index].meal = chooseMeal({ ...state.days[index], preferredTitle: meal.title }, index, plannedWithoutCurrent);
+  const support = chooseSupportMeals(state.days[index], state.plan[index].meal, index, plannedWithoutCurrent);
+  state.plan[index].sides = support.sides;
+  state.plan[index].dessert = support.dessert;
   render();
   saveState();
 }
 
 function effortLabel(value) {
   return { quick: "時短", normal: "普通", careful: "しっかり" }[value] || value;
-}
-
-function renderShoppingList() {
-  const pantry = parseList(elements.pantryItems.value);
-  const totals = {};
-  state.plan.forEach(({ meal }) => {
-    Object.entries(meal.ingredients).forEach(([category, ingredients]) => {
-      totals[category] ||= {};
-      Object.entries(ingredients).forEach(([name, amount]) => {
-        if (pantry.some((item) => name.includes(item))) return;
-        totals[category][name] = (totals[category][name] || 0) + scaledAmount(amount);
-      });
-    });
-  });
-
-  elements.shoppingList.innerHTML = "";
-  if (!state.plan.length) {
-    elements.shoppingList.innerHTML = `<div class="empty-state">献立を生成すると表示されます</div>`;
-    return;
-  }
-
-  Object.entries(totals).forEach(([category, ingredients]) => {
-    if (!Object.keys(ingredients).length) return;
-    const group = document.createElement("section");
-    group.className = "shopping-group";
-    group.innerHTML = `<h3>${categoryNames[category] || category}</h3>`;
-    const list = document.createElement("ul");
-    Object.entries(ingredients).forEach(([name, amount]) => {
-      const unit = ["卵", "パン"].includes(name) ? "" : "g";
-      const item = document.createElement("li");
-      item.textContent = `${name}: ${amount}${unit}`;
-      list.appendChild(item);
-    });
-    group.appendChild(list);
-    elements.shoppingList.appendChild(group);
-  });
 }
 
 function renderRecipes() {
@@ -583,19 +625,34 @@ function renderRecipes() {
     return;
   }
 
-  const seen = new Set();
-  state.plan.forEach(({ meal }) => {
-    if (seen.has(meal.title)) return;
-    seen.add(meal.title);
+  state.plan.forEach((entry) => {
+    const date = new Date(entry.day.key);
     const card = document.createElement("article");
     card.className = "recipe-card";
-    const ingredients = Object.keys(flattenIngredients(meal.ingredients)).join("、");
+    const rows = [
+      { label: "主菜", meal: entry.meal },
+      ...(entry.sides || []).map((meal) => ({ label: "副菜", meal })),
+      ...(entry.dessert ? [{ label: "デザート", meal: entry.dessert }] : []),
+    ];
     card.innerHTML = `
-      <h3>${meal.title}</h3>
-      <p class="meal-meta">材料: ${ingredients}</p>
-      <ol>${meal.steps.map((step) => `<li>${step}</li>`).join("")}</ol>
-      <div class="meal-actions">
-        <a class="small-button search-link" href="${recipeSearchUrl(meal)}" target="_blank" rel="noopener">詳しいレシピを検索</a>
+      <h3>${dateFormatter.format(date)} ${weekdayFormatter.format(date)}曜日</h3>
+      <div class="recipe-search-list">
+        ${rows
+          .map(
+            (row) => `
+              <div class="recipe-search-row">
+                <div>
+                  <p class="meal-meta">${row.label}</p>
+                  <strong>${row.meal.title}</strong>
+                </div>
+                <div class="meal-actions">
+                  <a class="small-button search-link" href="${recipeSearchUrl(row.meal)}" target="_blank" rel="noopener">検索</a>
+                  ${row.meal.sourceUrl ? `<a class="small-button search-link" href="${row.meal.sourceUrl}" target="_blank" rel="noopener">掲載元</a>` : ""}
+                </div>
+              </div>
+            `
+          )
+          .join("")}
       </div>
     `;
     elements.recipeList.appendChild(card);
@@ -614,6 +671,8 @@ function addLog(reason) {
     children: elements.children.value,
     days: state.days.map((day) => ({ ...day })),
     planTitles: state.plan.map((entry) => entry.meal.title),
+    sideTitles: state.plan.map((entry) => (entry.sides || []).map((meal) => meal.title)),
+    dessertTitles: state.plan.map((entry) => entry.dessert?.title || ""),
   };
   state.logs = [snapshot, ...state.logs.filter((log) => log.startDate !== snapshot.startDate || log.endDate !== snapshot.endDate)].slice(0, 30);
   renderLogs();
@@ -633,7 +692,9 @@ function renderLogs() {
     const mealItems = log.planTitles.map((title, index) => {
       const day = log.days[index];
       const label = day ? `${dateFormatter.format(new Date(day.key))}: ` : "";
-      return `<li>${label}${title}</li>`;
+      const sides = log.sideTitles?.[index]?.length ? ` / 副菜: ${log.sideTitles[index].join("・")}` : "";
+      const dessert = log.dessertTitles?.[index] ? ` / デザート: ${log.dessertTitles[index]}` : "";
+      return `<li>${label}${title}${sides}${dessert}</li>`;
     });
     card.innerHTML = `
       <h3>${log.startDate} から ${log.endDate}</h3>
@@ -662,7 +723,9 @@ function restoreLog(id) {
     .map((title, index) => {
       const meal = allMeals.find((item) => item.title === title);
       const day = state.days[index];
-      return meal && day ? { meal, day } : null;
+      const sides = (log.sideTitles?.[index] || []).map((sideTitle) => allMeals.find((item) => item.title === sideTitle)).filter(Boolean);
+      const dessert = log.dessertTitles?.[index] ? allMeals.find((item) => item.title === log.dessertTitles[index]) : null;
+      return meal && day ? { meal, day, sides, dessert } : null;
     })
     .filter(Boolean);
   render();
@@ -677,8 +740,8 @@ function deleteLog(id) {
 
 function updateSummary() {
   const factor = portionFactor();
-  const calories = state.plan.reduce((sum, entry) => sum + entry.meal.calories * factor, 0);
-  const cost = state.plan.reduce((sum, entry) => sum + entry.meal.cost * factor, 0);
+  const calories = state.plan.reduce((sum, entry) => sum + entryItems(entry).reduce((itemSum, item) => itemSum + item.calories, 0) * factor, 0);
+  const cost = state.plan.reduce((sum, entry) => sum + entryItems(entry).reduce((itemSum, item) => itemSum + item.cost, 0) * factor, 0);
   elements.totalDays.textContent = state.days.length;
   elements.totalCalories.textContent = formatCalories(calories);
   elements.totalCost.textContent = formatMoney(cost);
@@ -687,7 +750,6 @@ function updateSummary() {
 function render() {
   renderDaySettings();
   renderMealPlan();
-  renderShoppingList();
   renderRecipes();
   renderLogs();
   updateSummary();
@@ -708,6 +770,8 @@ function saveState() {
     defaultEffort: defaultEffort(),
     days: state.days,
     planTitles: state.plan.map((entry) => entry.meal.title),
+    sideTitles: state.plan.map((entry) => (entry.sides || []).map((meal) => meal.title)),
+    dessertTitles: state.plan.map((entry) => entry.dessert?.title || ""),
     logs: state.logs,
     generationSeed: state.generationSeed,
   };
@@ -745,22 +809,21 @@ function loadState() {
         .map((title, index) => {
           const meal = allMeals.find((item) => item.title === title);
           const day = state.days[index];
-          return meal && day ? { meal, day } : null;
+          if (!meal || !day) return null;
+          let sides = (saved.sideTitles?.[index] || []).map((sideTitle) => allMeals.find((item) => item.title === sideTitle)).filter(Boolean);
+          let dessert = saved.dessertTitles?.[index] ? allMeals.find((item) => item.title === saved.dessertTitles[index]) : null;
+          if (!sides.length && !dessert) {
+            const support = chooseSupportMeals(day, meal, index, []);
+            sides = support.sides;
+            dessert = support.dessert;
+          }
+          return { meal, day, sides, dessert };
         })
         .filter(Boolean)
     : [];
 
   if (!state.days.length) buildDays();
   render();
-}
-
-function copyShoppingList() {
-  const lines = [...elements.shoppingList.querySelectorAll(".shopping-group")].flatMap((group) => {
-    const title = group.querySelector("h3").textContent;
-    const items = [...group.querySelectorAll("li")].map((item) => `- ${item.textContent}`);
-    return [title, ...items, ""];
-  });
-  navigator.clipboard?.writeText(lines.join("\n").trim());
 }
 
 function passcodeHash(value) {
@@ -842,11 +905,9 @@ elements.logCurrentButton.addEventListener("click", () => {
   saveState();
 });
 elements.lockButton.addEventListener("click", lockApp);
-elements.copyShoppingButton.addEventListener("click", copyShoppingList);
 elements.authForm.addEventListener("submit", handleAuthSubmit);
 [elements.adults, elements.children, elements.avoidIngredients, elements.allergyIngredients, elements.childNgIngredients, elements.pantryItems, elements.preferBento, elements.proteinRule].forEach((input) => {
   input.addEventListener("change", () => {
-    renderShoppingList();
     updateSummary();
     saveState();
   });
