@@ -1,217 +1,4 @@
-const mealLibrary = [
-  {
-    title: "鶏むねの照り焼き",
-    genre: "japanese",
-    effort: "quick",
-    bento: true,
-    calories: 560,
-    cost: 340,
-    sides: ["小松菜のおひたし", "豆腐とわかめの味噌汁"],
-    ingredients: {
-      meat: { "鶏むね肉": 180 },
-      vegetable: { 小松菜: 70, ねぎ: 20 },
-      other: { 豆腐: 80, わかめ: 3, 米: 75 },
-      seasoning: { 醤油: 18, みりん: 18, 砂糖: 5, 味噌: 12 },
-    },
-    steps: ["鶏むね肉をそぎ切りにして片栗粉を薄くまぶす。", "両面を焼き、醤油・みりん・砂糖を絡める。", "副菜と汁物を用意して盛り付ける。"],
-  },
-  {
-    title: "豚こまと野菜の味噌炒め",
-    genre: "japanese",
-    effort: "quick",
-    bento: true,
-    calories: 650,
-    cost: 410,
-    sides: ["きゅうりの浅漬け", "卵スープ"],
-    ingredients: {
-      meat: { 豚こま肉: 170 },
-      vegetable: { キャベツ: 120, にんじん: 40, きゅうり: 50 },
-      other: { 卵: 0.5, 米: 75 },
-      seasoning: { 味噌: 18, 醤油: 8, 砂糖: 5, ごま油: 5 },
-    },
-    steps: ["野菜を食べやすく切る。", "豚肉を炒め、火が通ったら野菜を加える。", "味噌だれを入れて水分を飛ばす。"],
-  },
-  {
-    title: "鮭の塩焼き定食",
-    genre: "japanese",
-    effort: "normal",
-    bento: true,
-    calories: 590,
-    cost: 520,
-    sides: ["ひじき煮", "じゃがいもの味噌汁"],
-    ingredients: {
-      fish: { 鮭: 110 },
-      vegetable: { じゃがいも: 90, にんじん: 35 },
-      other: { ひじき: 8, 油揚げ: 20, 米: 75 },
-      seasoning: { 塩: 1, 醤油: 10, だし: 2, 味噌: 12 },
-    },
-    steps: ["鮭に塩を振って焼く。", "ひじきと野菜を煮る。", "味噌汁とご飯を合わせる。"],
-  },
-  {
-    title: "和風ハンバーグ",
-    genre: "western",
-    effort: "careful",
-    bento: true,
-    calories: 760,
-    cost: 560,
-    sides: ["ブロッコリー", "コーンスープ"],
-    ingredients: {
-      meat: { 合いびき肉: 180 },
-      vegetable: { 玉ねぎ: 80, ブロッコリー: 70 },
-      other: { パン粉: 14, 卵: 0.4, 牛乳: 20, 米: 75 },
-      seasoning: { 塩: 1, 醤油: 12, 大根おろし: 50 },
-    },
-    steps: ["玉ねぎを炒めて冷ます。", "肉だねをこねて成形し、両面を焼く。", "大根おろしと醤油ベースのソースをかける。"],
-  },
-  {
-    title: "チキントマト煮",
-    genre: "western",
-    effort: "normal",
-    bento: true,
-    calories: 680,
-    cost: 470,
-    sides: ["グリーンサラダ", "バターライス"],
-    ingredients: {
-      meat: { 鶏もも肉: 170 },
-      vegetable: { 玉ねぎ: 80, レタス: 60, トマト缶: 120 },
-      other: { 米: 75 },
-      seasoning: { コンソメ: 3, 塩: 1, オリーブオイル: 6 },
-    },
-    steps: ["鶏もも肉に焼き色をつける。", "玉ねぎとトマト缶を加えて煮込む。", "味を整えてサラダと盛る。"],
-  },
-  {
-    title: "クリームシチュー",
-    genre: "western",
-    effort: "normal",
-    bento: false,
-    calories: 720,
-    cost: 430,
-    sides: ["ロールパン", "温野菜"],
-    ingredients: {
-      meat: { 鶏もも肉: 120 },
-      vegetable: { じゃがいも: 120, にんじん: 60, 玉ねぎ: 70, ブロッコリー: 50 },
-      other: { 牛乳: 150, パン: 1 },
-      seasoning: { シチュールウ: 25 },
-    },
-    steps: ["具材を切って炒める。", "水を加えて柔らかくなるまで煮る。", "ルウと牛乳を加えて仕上げる。"],
-  },
-  {
-    title: "麻婆豆腐",
-    genre: "chinese",
-    effort: "quick",
-    bento: true,
-    calories: 630,
-    cost: 360,
-    sides: ["もやしナムル", "中華スープ"],
-    ingredients: {
-      meat: { 豚ひき肉: 90 },
-      vegetable: { ねぎ: 35, もやし: 90 },
-      other: { 豆腐: 220, 米: 75 },
-      seasoning: { 味噌: 10, 醤油: 10, 豆板醤: 4, ごま油: 5 },
-    },
-    steps: ["ひき肉とねぎを炒める。", "調味料と豆腐を加えて煮る。", "とろみをつけ、ナムルと合わせる。"],
-  },
-  {
-    title: "酢豚風ミートボール",
-    genre: "chinese",
-    effort: "normal",
-    bento: true,
-    calories: 700,
-    cost: 460,
-    sides: ["春雨サラダ", "わかめスープ"],
-    ingredients: {
-      meat: { 豚ひき肉: 150 },
-      vegetable: { 玉ねぎ: 70, ピーマン: 40, にんじん: 50 },
-      other: { 春雨: 25, 米: 75 },
-      seasoning: { 酢: 12, 醤油: 12, ケチャップ: 15, 砂糖: 8 },
-    },
-    steps: ["肉だねを丸めて焼く。", "野菜を加えて炒める。", "甘酢だれを絡める。"],
-  },
-  {
-    title: "ビビンバ丼",
-    genre: "other",
-    effort: "quick",
-    bento: true,
-    calories: 690,
-    cost: 420,
-    sides: ["わかめスープ", "冷ややっこ"],
-    ingredients: {
-      meat: { 牛こま肉: 120 },
-      vegetable: { ほうれん草: 70, にんじん: 45, もやし: 80 },
-      other: { 卵: 0.5, 豆腐: 80, 米: 85 },
-      seasoning: { 醤油: 12, ごま油: 6, コチュジャン: 10 },
-    },
-    steps: ["野菜をゆでてナムルにする。", "牛肉を甘辛く炒める。", "ご飯に具材をのせる。"],
-  },
-  {
-    title: "さば缶カレー",
-    genre: "other",
-    effort: "quick",
-    bento: false,
-    calories: 740,
-    cost: 380,
-    sides: ["キャベツサラダ", "ヨーグルト"],
-    ingredients: {
-      fish: { さば缶: 100 },
-      vegetable: { 玉ねぎ: 90, キャベツ: 90, トマト缶: 90 },
-      other: { ヨーグルト: 60, 米: 85 },
-      seasoning: { カレールウ: 22 },
-    },
-    steps: ["玉ねぎを炒める。", "さば缶とトマト缶を加える。", "カレールウで味を整える。"],
-  },
-];
-
-const ingredientProfiles = [
-  { name: "鶏むね肉", type: "meat", genre: ["japanese", "western", "chinese", "other"], calories: 260, cost: 170, bento: true, baseAmount: 180 },
-  { name: "鶏もも肉", type: "meat", genre: ["japanese", "western", "chinese", "other"], calories: 360, cost: 220, bento: true, baseAmount: 170 },
-  { name: "豚こま肉", type: "meat", genre: ["japanese", "chinese", "other"], calories: 390, cost: 230, bento: true, baseAmount: 170 },
-  { name: "豚ひき肉", type: "meat", genre: ["japanese", "western", "chinese", "other"], calories: 420, cost: 210, bento: true, baseAmount: 150 },
-  { name: "牛こま肉", type: "meat", genre: ["japanese", "western", "other"], calories: 430, cost: 290, bento: true, baseAmount: 150 },
-  { name: "鮭", type: "fish", genre: ["japanese", "western"], calories: 250, cost: 330, bento: true, baseAmount: 120 },
-  { name: "さば", type: "fish", genre: ["japanese", "other"], calories: 310, cost: 260, bento: true, baseAmount: 120 },
-  { name: "たら", type: "fish", genre: ["japanese", "western", "chinese"], calories: 170, cost: 280, bento: false, baseAmount: 130 },
-  { name: "ぶり", type: "fish", genre: ["japanese"], calories: 320, cost: 340, bento: true, baseAmount: 120 },
-  { name: "豆腐", type: "other", genre: ["japanese", "chinese", "other"], calories: 150, cost: 95, bento: false, baseAmount: 220 },
-  { name: "厚揚げ", type: "other", genre: ["japanese", "chinese", "other"], calories: 230, cost: 120, bento: true, baseAmount: 150 },
-  { name: "卵", type: "other", genre: ["japanese", "western", "chinese", "other"], calories: 180, cost: 80, bento: true, baseAmount: 1.5 },
-];
-
-const vegetableSets = [
-  { names: ["キャベツ", "にんじん", "玉ねぎ"], cost: 110, calories: 85 },
-  { names: ["小松菜", "しめじ", "ねぎ"], cost: 130, calories: 70 },
-  { names: ["なす", "ピーマン", "玉ねぎ"], cost: 140, calories: 90 },
-  { names: ["ブロッコリー", "じゃがいも", "にんじん"], cost: 160, calories: 150 },
-  { names: ["もやし", "にら", "ねぎ"], cost: 85, calories: 65 },
-  { names: ["ほうれん草", "玉ねぎ", "コーン"], cost: 145, calories: 110 },
-  { names: ["白菜", "きのこ", "にんじん"], cost: 120, calories: 75 },
-  { names: ["トマト缶", "玉ねぎ", "ズッキーニ"], cost: 170, calories: 120 },
-];
-
-const sauceProfiles = [
-  { name: "照り焼き", genre: "japanese", seasoning: { 醤油: 16, みりん: 16, 砂糖: 5 }, calories: 45, cost: 20 },
-  { name: "生姜焼き", genre: "japanese", seasoning: { 醤油: 14, みりん: 12, 生姜: 8 }, calories: 40, cost: 24 },
-  { name: "味噌バター", genre: "japanese", seasoning: { 味噌: 16, バター: 8, 醤油: 6 }, calories: 85, cost: 35 },
-  { name: "塩だれ", genre: "japanese", seasoning: { 塩: 1, ごま油: 6, レモン汁: 8 }, calories: 60, cost: 28 },
-  { name: "トマト煮", genre: "western", seasoning: { トマト缶: 100, コンソメ: 3, オリーブオイル: 6 }, calories: 90, cost: 58 },
-  { name: "クリーム煮", genre: "western", seasoning: { 牛乳: 120, コンソメ: 3, バター: 8 }, calories: 130, cost: 70 },
-  { name: "ガーリック醤油", genre: "western", seasoning: { 醤油: 12, にんにく: 5, オリーブオイル: 6 }, calories: 65, cost: 26 },
-  { name: "中華あん", genre: "chinese", seasoning: { 醤油: 12, 鶏ガラ: 3, ごま油: 6, 片栗粉: 6 }, calories: 70, cost: 30 },
-  { name: "オイスター炒め", genre: "chinese", seasoning: { オイスターソース: 12, 醤油: 8, ごま油: 5 }, calories: 65, cost: 36 },
-  { name: "甘酢", genre: "chinese", seasoning: { 酢: 12, 醤油: 10, ケチャップ: 14, 砂糖: 7 }, calories: 75, cost: 32 },
-  { name: "カレー風味", genre: "other", seasoning: { カレー粉: 5, コンソメ: 3, ケチャップ: 10 }, calories: 55, cost: 32 },
-  { name: "韓国風甘辛", genre: "other", seasoning: { コチュジャン: 10, 醤油: 10, ごま油: 6 }, calories: 75, cost: 40 },
-];
-
-const cookingStyles = [
-  { name: "炒め", effort: "quick", bento: true, suffix: "炒め", steps: ["食材を食べやすく切る。", "主食材を先に加熱し、野菜を加えて炒める。", "味付けを絡めて水分を飛ばす。"] },
-  { name: "焼き", effort: "quick", bento: true, suffix: "焼き", steps: ["主食材に軽く塩をして下味をつける。", "両面を焼き、野菜を添える。", "仕上げにたれを絡める。"] },
-  { name: "煮", effort: "normal", bento: false, suffix: "煮", steps: ["食材を切って軽く炒める。", "調味料と水を加えて煮る。", "味を見て少し煮詰める。"] },
-  { name: "丼", effort: "quick", bento: true, suffix: "丼", steps: ["主食材と野菜を加熱する。", "濃いめに味付けする。", "ご飯にのせて仕上げる。"] },
-  { name: "蒸し", effort: "normal", bento: false, suffix: "蒸し", steps: ["食材を重ねてフライパンに入れる。", "少量の水を加えて蒸す。", "仕上げのたれをかける。"] },
-  { name: "オーブン", effort: "careful", bento: true, suffix: "オーブン焼き", steps: ["食材に下味をつける。", "耐熱皿に並べて焼く。", "焼き色がついたら副菜と盛り付ける。"] },
-];
-
-const sidePool = {
+﻿const sidePool = {
   japanese: [["きゅうりの浅漬け", "豆腐とわかめの味噌汁"], ["ひじき煮", "小松菜のおひたし"], ["大根サラダ", "きのこの味噌汁"]],
   western: [["グリーンサラダ", "コンソメスープ"], ["温野菜", "ロールパン"], ["コールスロー", "ポテトスープ"]],
   chinese: [["もやしナムル", "中華スープ"], ["春雨サラダ", "卵スープ"], ["きゅうりの中華和え", "わかめスープ"]],
@@ -383,72 +170,26 @@ function buildCsvMeal(row, index) {
 
 async function loadCsvMeals() {
   try {
-    const response = await fetch("./recipe_dish_names_2000.csv", { cache: "no-store" });
-    if (!response.ok) throw new Error("CSVを読み込めませんでした");
-    const text = await response.text();
-    const rows = csvRowsToObjects(text);
-    const seen = new Set();
+    let rows = Array.isArray(window.RECIPE_DISH_ROWS) ? window.RECIPE_DISH_ROWS : [];
+    if (!rows.length) {
+      const response = await fetch("./recipe_dish_names_2000.csv", { cache: "no-store" });
+      if (!response.ok) throw new Error("CSVを読み込めませんでした");
+      const text = await response.text();
+      rows = csvRowsToObjects(text);
+    }
     csvMeals = rows
       .map(buildCsvMeal)
-      .filter((meal) => meal.title && !/^その他/.test(meal.title))
-      .filter((meal) => {
-        if (seen.has(meal.normalizedName)) return false;
-        seen.add(meal.normalizedName);
-        return true;
-      });
-    if (csvMeals.length) {
-      allMeals = csvMeals;
-    }
+      .filter((meal) => meal.title);
+    allMeals = csvMeals;
   } catch (error) {
-    allMeals = [...mealLibrary, ...generatedMeals];
+    csvMeals = [];
+    allMeals = [];
   }
 }
 
-function buildGeneratedMeals() {
-  const meals = [];
-  ingredientProfiles.forEach((protein, proteinIndex) => {
-    sauceProfiles
-      .filter((sauce) => protein.genre.includes(sauce.genre))
-      .forEach((sauce, sauceIndex) => {
-        cookingStyles.forEach((style, styleIndex) => {
-          const vegetableSet = vegetableSets[(proteinIndex + sauceIndex + styleIndex) % vegetableSets.length];
-          const sideSet = sidePool[sauce.genre][(proteinIndex + styleIndex) % sidePool[sauce.genre].length];
-          const title = `${protein.name}と${vegetableSet.names[0]}の${sauce.name}${style.suffix}`;
-          const ingredients = {
-            meat: {},
-            fish: {},
-            vegetable: Object.fromEntries(vegetableSet.names.map((name, index) => [name, index === 0 ? 85 : 45])),
-            other: style.name === "丼" ? { 米: 85 } : { 米: 75 },
-            seasoning: sauce.seasoning,
-          };
-          ingredients[protein.type][protein.name] = protein.baseAmount;
-          Object.keys(ingredients).forEach((key) => {
-            if (!Object.keys(ingredients[key]).length) delete ingredients[key];
-          });
-          meals.push({
-            title,
-            genre: sauce.genre,
-            effort: style.effort,
-            bento: protein.bento && style.bento,
-            calories: protein.calories + vegetableSet.calories + sauce.calories + (style.name === "丼" ? 280 : 230),
-            cost: protein.cost + vegetableSet.cost + sauce.cost + 45,
-            sides: sideSet,
-            ingredients,
-            generated: true,
-            steps: [
-              ...style.steps,
-              `${genreLabels[sauce.genre]}の${sauce.name}味なので、味見して濃ければ水か野菜を足す。`,
-            ],
-          });
-        });
-      });
-  });
-  return meals;
-}
 
-const generatedMeals = buildGeneratedMeals();
 let csvMeals = [];
-let allMeals = [...mealLibrary, ...generatedMeals];
+let allMeals = [];
 
 const state = {
   days: [],
@@ -584,6 +325,7 @@ function buildDays() {
 }
 
 function chooseMeal(day, index, plannedMeals = []) {
+  if (!allMeals.length) return null;
   const blockedWords = allBlockedIngredients();
   const preferredMeal = allMeals.find((meal) => meal.title === day.preferredTitle);
   if (preferredMeal && !mealContainsBlockedIngredient(preferredMeal, blockedWords)) {
@@ -608,7 +350,7 @@ function chooseMeal(day, index, plannedMeals = []) {
   const freshCandidates = candidates.filter((meal) => !recentTitles.includes(meal.title));
   const pool = freshCandidates.length ? freshCandidates : candidates;
   const seed = stringHash(`${day.key}-${day.genre}-${day.effort}-${elements.proteinRule.value}-${state.generationSeed}-${index}`);
-  return pool[seed % pool.length];
+  return pool[seed % pool.length] || null;
 }
 
 function rankCandidatesByRule(candidates) {
@@ -628,13 +370,19 @@ function generatePlan() {
   if (!state.days.length) {
     buildDays();
   }
+  if (!allMeals.length) {
+    state.plan = [];
+    render();
+    saveState();
+    return;
+  }
   state.generationSeed += 1;
   const nextPlan = [];
   state.days.forEach((day, index) => {
-    nextPlan.push({
-      day,
-      meal: chooseMeal(day, index, nextPlan),
-    });
+    const meal = chooseMeal(day, index, nextPlan);
+    if (meal) {
+      nextPlan.push({ day, meal });
+    }
   });
   state.plan = nextPlan;
   render();
@@ -700,6 +448,9 @@ function renderDaySettings() {
 }
 
 function mealOptionsHtml(selectedTitle = "", emptyLabel = "選択なし") {
+  if (!allMeals.length) {
+    return `<option value="">料理名データを読み込めません</option>`;
+  }
   const options = [`<option value="">${emptyLabel}</option>`];
   allMeals.forEach((meal) => {
     const selected = meal.title === selectedTitle ? " selected" : "";
@@ -716,7 +467,7 @@ function recipeSearchUrl(meal) {
 function renderMealPlan() {
   elements.mealPlan.innerHTML = "";
   if (!state.plan.length) {
-    elements.mealPlan.innerHTML = `<div class="empty-state">条件を作って献立を生成してください</div>`;
+    elements.mealPlan.innerHTML = `<div class="empty-state">${allMeals.length ? "条件を作って献立を生成してください" : "料理名データを読み込めません。recipe-data.js と recipe_dish_names_2000.csv を確認してください"}</div>`;
     return;
   }
 
@@ -828,7 +579,7 @@ function renderShoppingList() {
 function renderRecipes() {
   elements.recipeList.innerHTML = "";
   if (!state.plan.length) {
-    elements.recipeList.innerHTML = `<div class="empty-state">献立を生成すると表示されます</div>`;
+    elements.recipeList.innerHTML = `<div class="empty-state">${allMeals.length ? "献立を生成すると表示されます" : "料理名データを読み込めません"}</div>`;
     return;
   }
 
@@ -1109,3 +860,4 @@ async function boot() {
 }
 
 boot();
+
