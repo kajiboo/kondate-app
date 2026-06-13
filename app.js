@@ -161,10 +161,115 @@ const mealLibrary = [
   },
 ];
 
+const ingredientProfiles = [
+  { name: "鶏むね肉", type: "meat", genre: ["japanese", "western", "chinese", "other"], calories: 260, cost: 170, bento: true, baseAmount: 180 },
+  { name: "鶏もも肉", type: "meat", genre: ["japanese", "western", "chinese", "other"], calories: 360, cost: 220, bento: true, baseAmount: 170 },
+  { name: "豚こま肉", type: "meat", genre: ["japanese", "chinese", "other"], calories: 390, cost: 230, bento: true, baseAmount: 170 },
+  { name: "豚ひき肉", type: "meat", genre: ["japanese", "western", "chinese", "other"], calories: 420, cost: 210, bento: true, baseAmount: 150 },
+  { name: "牛こま肉", type: "meat", genre: ["japanese", "western", "other"], calories: 430, cost: 290, bento: true, baseAmount: 150 },
+  { name: "鮭", type: "fish", genre: ["japanese", "western"], calories: 250, cost: 330, bento: true, baseAmount: 120 },
+  { name: "さば", type: "fish", genre: ["japanese", "other"], calories: 310, cost: 260, bento: true, baseAmount: 120 },
+  { name: "たら", type: "fish", genre: ["japanese", "western", "chinese"], calories: 170, cost: 280, bento: false, baseAmount: 130 },
+  { name: "ぶり", type: "fish", genre: ["japanese"], calories: 320, cost: 340, bento: true, baseAmount: 120 },
+  { name: "豆腐", type: "other", genre: ["japanese", "chinese", "other"], calories: 150, cost: 95, bento: false, baseAmount: 220 },
+  { name: "厚揚げ", type: "other", genre: ["japanese", "chinese", "other"], calories: 230, cost: 120, bento: true, baseAmount: 150 },
+  { name: "卵", type: "other", genre: ["japanese", "western", "chinese", "other"], calories: 180, cost: 80, bento: true, baseAmount: 1.5 },
+];
+
+const vegetableSets = [
+  { names: ["キャベツ", "にんじん", "玉ねぎ"], cost: 110, calories: 85 },
+  { names: ["小松菜", "しめじ", "ねぎ"], cost: 130, calories: 70 },
+  { names: ["なす", "ピーマン", "玉ねぎ"], cost: 140, calories: 90 },
+  { names: ["ブロッコリー", "じゃがいも", "にんじん"], cost: 160, calories: 150 },
+  { names: ["もやし", "にら", "ねぎ"], cost: 85, calories: 65 },
+  { names: ["ほうれん草", "玉ねぎ", "コーン"], cost: 145, calories: 110 },
+  { names: ["白菜", "きのこ", "にんじん"], cost: 120, calories: 75 },
+  { names: ["トマト缶", "玉ねぎ", "ズッキーニ"], cost: 170, calories: 120 },
+];
+
+const sauceProfiles = [
+  { name: "照り焼き", genre: "japanese", seasoning: { 醤油: 16, みりん: 16, 砂糖: 5 }, calories: 45, cost: 20 },
+  { name: "生姜焼き", genre: "japanese", seasoning: { 醤油: 14, みりん: 12, 生姜: 8 }, calories: 40, cost: 24 },
+  { name: "味噌バター", genre: "japanese", seasoning: { 味噌: 16, バター: 8, 醤油: 6 }, calories: 85, cost: 35 },
+  { name: "塩だれ", genre: "japanese", seasoning: { 塩: 1, ごま油: 6, レモン汁: 8 }, calories: 60, cost: 28 },
+  { name: "トマト煮", genre: "western", seasoning: { トマト缶: 100, コンソメ: 3, オリーブオイル: 6 }, calories: 90, cost: 58 },
+  { name: "クリーム煮", genre: "western", seasoning: { 牛乳: 120, コンソメ: 3, バター: 8 }, calories: 130, cost: 70 },
+  { name: "ガーリック醤油", genre: "western", seasoning: { 醤油: 12, にんにく: 5, オリーブオイル: 6 }, calories: 65, cost: 26 },
+  { name: "中華あん", genre: "chinese", seasoning: { 醤油: 12, 鶏ガラ: 3, ごま油: 6, 片栗粉: 6 }, calories: 70, cost: 30 },
+  { name: "オイスター炒め", genre: "chinese", seasoning: { オイスターソース: 12, 醤油: 8, ごま油: 5 }, calories: 65, cost: 36 },
+  { name: "甘酢", genre: "chinese", seasoning: { 酢: 12, 醤油: 10, ケチャップ: 14, 砂糖: 7 }, calories: 75, cost: 32 },
+  { name: "カレー風味", genre: "other", seasoning: { カレー粉: 5, コンソメ: 3, ケチャップ: 10 }, calories: 55, cost: 32 },
+  { name: "韓国風甘辛", genre: "other", seasoning: { コチュジャン: 10, 醤油: 10, ごま油: 6 }, calories: 75, cost: 40 },
+];
+
+const cookingStyles = [
+  { name: "炒め", effort: "quick", bento: true, suffix: "炒め", steps: ["食材を食べやすく切る。", "主食材を先に加熱し、野菜を加えて炒める。", "味付けを絡めて水分を飛ばす。"] },
+  { name: "焼き", effort: "quick", bento: true, suffix: "焼き", steps: ["主食材に軽く塩をして下味をつける。", "両面を焼き、野菜を添える。", "仕上げにたれを絡める。"] },
+  { name: "煮", effort: "normal", bento: false, suffix: "煮", steps: ["食材を切って軽く炒める。", "調味料と水を加えて煮る。", "味を見て少し煮詰める。"] },
+  { name: "丼", effort: "quick", bento: true, suffix: "丼", steps: ["主食材と野菜を加熱する。", "濃いめに味付けする。", "ご飯にのせて仕上げる。"] },
+  { name: "蒸し", effort: "normal", bento: false, suffix: "蒸し", steps: ["食材を重ねてフライパンに入れる。", "少量の水を加えて蒸す。", "仕上げのたれをかける。"] },
+  { name: "オーブン", effort: "careful", bento: true, suffix: "オーブン焼き", steps: ["食材に下味をつける。", "耐熱皿に並べて焼く。", "焼き色がついたら副菜と盛り付ける。"] },
+];
+
+const sidePool = {
+  japanese: [["きゅうりの浅漬け", "豆腐とわかめの味噌汁"], ["ひじき煮", "小松菜のおひたし"], ["大根サラダ", "きのこの味噌汁"]],
+  western: [["グリーンサラダ", "コンソメスープ"], ["温野菜", "ロールパン"], ["コールスロー", "ポテトスープ"]],
+  chinese: [["もやしナムル", "中華スープ"], ["春雨サラダ", "卵スープ"], ["きゅうりの中華和え", "わかめスープ"]],
+  other: [["冷ややっこ", "わかめスープ"], ["キャベツサラダ", "ヨーグルト"], ["ナムル", "スープ"]],
+};
+
+const genreLabels = { japanese: "和風", western: "洋風", chinese: "中華", other: "アレンジ" };
+
+function buildGeneratedMeals() {
+  const meals = [];
+  ingredientProfiles.forEach((protein, proteinIndex) => {
+    sauceProfiles
+      .filter((sauce) => protein.genre.includes(sauce.genre))
+      .forEach((sauce, sauceIndex) => {
+        cookingStyles.forEach((style, styleIndex) => {
+          const vegetableSet = vegetableSets[(proteinIndex + sauceIndex + styleIndex) % vegetableSets.length];
+          const sideSet = sidePool[sauce.genre][(proteinIndex + styleIndex) % sidePool[sauce.genre].length];
+          const title = `${protein.name}と${vegetableSet.names[0]}の${sauce.name}${style.suffix}`;
+          const ingredients = {
+            meat: {},
+            fish: {},
+            vegetable: Object.fromEntries(vegetableSet.names.map((name, index) => [name, index === 0 ? 85 : 45])),
+            other: style.name === "丼" ? { 米: 85 } : { 米: 75 },
+            seasoning: sauce.seasoning,
+          };
+          ingredients[protein.type][protein.name] = protein.baseAmount;
+          Object.keys(ingredients).forEach((key) => {
+            if (!Object.keys(ingredients[key]).length) delete ingredients[key];
+          });
+          meals.push({
+            title,
+            genre: sauce.genre,
+            effort: style.effort,
+            bento: protein.bento && style.bento,
+            calories: protein.calories + vegetableSet.calories + sauce.calories + (style.name === "丼" ? 280 : 230),
+            cost: protein.cost + vegetableSet.cost + sauce.cost + 45,
+            sides: sideSet,
+            ingredients,
+            generated: true,
+            steps: [
+              ...style.steps,
+              `${genreLabels[sauce.genre]}の${sauce.name}味なので、味見して濃ければ水か野菜を足す。`,
+            ],
+          });
+        });
+      });
+  });
+  return meals;
+}
+
+const generatedMeals = buildGeneratedMeals();
+const allMeals = [...mealLibrary, ...generatedMeals];
+
 const state = {
   days: [],
   plan: [],
   logs: [],
+  generationSeed: 0,
 };
 
 const categoryNames = {
@@ -250,6 +355,15 @@ function mealProteinType(meal) {
   return "other";
 }
 
+function stringHash(value) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
 function portionFactor() {
   return Number(elements.adults.value || 0) + Number(elements.children.value || 0) * 0.62;
 }
@@ -286,29 +400,30 @@ function buildDays() {
 
 function chooseMeal(day, index, plannedMeals = []) {
   const blockedWords = allBlockedIngredients();
-  const preferredMeal = mealLibrary.find((meal) => meal.title === day.preferredTitle);
+  const preferredMeal = allMeals.find((meal) => meal.title === day.preferredTitle);
   if (preferredMeal && !mealContainsBlockedIngredient(preferredMeal, blockedWords)) {
     return preferredMeal;
   }
 
-  const strictCandidates = mealLibrary.filter((meal) => {
+  const strictCandidates = allMeals.filter((meal) => {
     const matchesGenre = day.genre === "any" || meal.genre === day.genre;
     const matchesEffort = meal.effort === day.effort || elements.proteinRule.value === "moreQuick";
     const matchesBento = !day.bento || meal.bento;
     return matchesGenre && matchesEffort && matchesBento && !mealContainsBlockedIngredient(meal, blockedWords);
   });
 
-  const looseCandidates = mealLibrary.filter((meal) => {
+  const looseCandidates = allMeals.filter((meal) => {
     const matchesGenre = day.genre === "any" || meal.genre === day.genre;
     return matchesGenre && !mealContainsBlockedIngredient(meal, blockedWords);
   });
 
-  let candidates = strictCandidates.length ? strictCandidates : looseCandidates.length ? looseCandidates : mealLibrary;
+  let candidates = strictCandidates.length ? strictCandidates : looseCandidates.length ? looseCandidates : allMeals;
   candidates = rankCandidatesByRule(candidates);
   const recentTitles = plannedMeals.slice(Math.max(0, index - 2), index).map((entry) => entry.meal.title);
   const freshCandidates = candidates.filter((meal) => !recentTitles.includes(meal.title));
   const pool = freshCandidates.length ? freshCandidates : candidates;
-  return pool[index % pool.length];
+  const seed = stringHash(`${day.key}-${day.genre}-${day.effort}-${elements.proteinRule.value}-${state.generationSeed}-${index}`);
+  return pool[seed % pool.length];
 }
 
 function rankCandidatesByRule(candidates) {
@@ -328,6 +443,7 @@ function generatePlan() {
   if (!state.days.length) {
     buildDays();
   }
+  state.generationSeed += 1;
   const nextPlan = [];
   state.days.forEach((day, index) => {
     nextPlan.push({
@@ -400,11 +516,16 @@ function renderDaySettings() {
 
 function mealOptionsHtml(selectedTitle = "", emptyLabel = "選択なし") {
   const options = [`<option value="">${emptyLabel}</option>`];
-  mealLibrary.forEach((meal) => {
+  allMeals.forEach((meal) => {
     const selected = meal.title === selectedTitle ? " selected" : "";
     options.push(`<option value="${meal.title}"${selected}>${meal.title}</option>`);
   });
   return options.join("");
+}
+
+function recipeSearchUrl(meal) {
+  const keywords = [meal.title, ...Object.keys(flattenIngredients(meal.ingredients)).slice(0, 4), "レシピ"].join(" ");
+  return `https://www.google.com/search?q=${encodeURIComponent(keywords)}`;
 }
 
 function renderMealPlan() {
@@ -439,6 +560,7 @@ function renderMealPlan() {
             ${mealOptionsHtml(meal.title)}
           </select>
           <button class="small-button swap-meal-button" type="button">別案</button>
+          <a class="small-button search-link" href="${recipeSearchUrl(meal)}" target="_blank" rel="noopener">検索</a>
         </div>
       </div>
     `;
@@ -453,7 +575,7 @@ function renderMealPlan() {
 }
 
 function changeMealForDay(dayKey, title) {
-  const meal = mealLibrary.find((item) => item.title === title);
+  const meal = allMeals.find((item) => item.title === title);
   const entry = state.plan.find((item) => item.day.key === dayKey);
   const day = state.days.find((item) => item.key === dayKey);
   if (!meal || !entry || !day) return;
@@ -468,8 +590,8 @@ function swapMealForDay(dayKey) {
   if (index < 0) return;
   const currentTitle = state.plan[index].meal.title;
   const plannedWithoutCurrent = state.plan.slice(0, index);
-  const candidates = rankCandidatesByRule(mealLibrary).filter((meal) => meal.title !== currentTitle && !mealContainsBlockedIngredient(meal, allBlockedIngredients()));
-  const fallback = candidates.length ? candidates : mealLibrary.filter((meal) => meal.title !== currentTitle);
+  const candidates = rankCandidatesByRule(allMeals).filter((meal) => meal.title !== currentTitle && !mealContainsBlockedIngredient(meal, allBlockedIngredients()));
+  const fallback = candidates.length ? candidates : allMeals.filter((meal) => meal.title !== currentTitle);
   const meal = fallback[index % fallback.length] || state.plan[index].meal;
   state.plan[index].meal = meal;
   state.days[index].preferredTitle = meal.title;
@@ -536,6 +658,9 @@ function renderRecipes() {
       <h3>${meal.title}</h3>
       <p class="meal-meta">材料: ${ingredients}</p>
       <ol>${meal.steps.map((step) => `<li>${step}</li>`).join("")}</ol>
+      <div class="meal-actions">
+        <a class="small-button search-link" href="${recipeSearchUrl(meal)}" target="_blank" rel="noopener">詳しいレシピを検索</a>
+      </div>
     `;
     elements.recipeList.appendChild(card);
   });
@@ -599,7 +724,7 @@ function restoreLog(id) {
   state.days = log.days.map((day) => ({ ...day }));
   state.plan = log.planTitles
     .map((title, index) => {
-      const meal = mealLibrary.find((item) => item.title === title);
+      const meal = allMeals.find((item) => item.title === title);
       const day = state.days[index];
       return meal && day ? { meal, day } : null;
     })
@@ -648,6 +773,7 @@ function saveState() {
     days: state.days,
     planTitles: state.plan.map((entry) => entry.meal.title),
     logs: state.logs,
+    generationSeed: state.generationSeed,
   };
   localStorage.setItem("dinner-planner", JSON.stringify(payload));
 }
@@ -677,10 +803,11 @@ function loadState() {
   if (effortInput) effortInput.checked = true;
   state.days = Array.isArray(saved.days) ? saved.days : [];
   state.logs = Array.isArray(saved.logs) ? saved.logs : [];
+  state.generationSeed = Number(saved.generationSeed || 0);
   state.plan = Array.isArray(saved.planTitles)
     ? saved.planTitles
         .map((title, index) => {
-          const meal = mealLibrary.find((item) => item.title === title);
+          const meal = allMeals.find((item) => item.title === title);
           const day = state.days[index];
           return meal && day ? { meal, day } : null;
         })
